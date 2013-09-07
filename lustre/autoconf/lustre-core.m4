@@ -1881,6 +1881,8 @@ lustre/lfsck/Makefile
 lustre/lfsck/autoMakefile
 lustre/mdt/Makefile
 lustre/mdt/autoMakefile
+lustre/nodemap/Makefile
+lustre/nodemap/autoMakefile
 lustre/mdd/Makefile
 lustre/mdd/autoMakefile
 lustre/fld/Makefile
