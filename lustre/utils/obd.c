@@ -3440,6 +3440,53 @@ int jt_nodemap_del(int argc, char **argv)
 	return rc;
 }
 
+int jt_nodemap_add_range(int argc, char **argv)
+{
+	enum lcfg_command_type cmd = 0;
+	int rc = 0;
+
+	cmd = LCFG_NODEMAP_ADD_RANGE;
+
+	rc = llapi_search_nodemap_range(argv[2]);
+
+	if (rc != 0) {
+		fprintf(stderr, "error: cannot add range\n");
+		return 1;
+	}
+
+	rc = nodemap_cmd(cmd, 3, argv[0], argv[1], argv[2]);
+
+	if (rc != 0) {
+		errno = -rc;
+		perror(argv[0]);
+	}
+
+	return rc;
+}
+
+int jt_nodemap_del_range(int argc, char **argv)
+{
+	enum lcfg_command_type cmd = 0;
+	int rc = 0;
+
+	cmd = LCFG_NODEMAP_DEL_RANGE;
+	rc = llapi_search_nodemap_range(argv[2]);
+
+	if (rc == 0) {
+		fprintf(stderr, "error: cannot delete range\n");
+		return 1;
+	}
+
+	rc = nodemap_cmd(cmd, 3, argv[0], argv[1], argv[2]);
+
+	if (rc != 0) {
+		errno = -rc;
+		perror(argv[0]);
+	}
+
+	return rc;
+}
+
 int jt_nodemap_modify(int argc, char **argv)
 {
 	enum lcfg_command_type cmd = 0;
@@ -3456,7 +3503,7 @@ int jt_nodemap_modify(int argc, char **argv)
 	else if (strcmp("squash_gid", argv[2]) == 0)
 		cmd = LCFG_NODEMAP_SQUASH_GID;
 	else {
-		fprintf(stderr, "lctl nodemap_modify invalid subcommand");
+		fprintf(stderr, "lctl nodemap_modify invalid subcommand\n");
 		return -1;
 	}
 		
