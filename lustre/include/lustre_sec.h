@@ -194,6 +194,12 @@ enum sptlrpc_bulk_service {
                   SPTLRPC_SVC_NULL,                     \
                   SPTLRPC_BULK_HASH,                    \
                   SPTLRPC_BULK_SVC_INTG)
+#define SPTLRPC_FLVR_GSSNULL                            \
+        MAKE_FLVR(SPTLRPC_POLICY_GSS,                   \
+                  SPTLRPC_MECH_GSS_NULL,                \
+                  SPTLRPC_SVC_NULL,                     \
+                  SPTLRPC_BULK_DEFAULT,                 \
+                  SPTLRPC_BULK_SVC_NULL)
 #define SPTLRPC_FLVR_KRB5N                              \
         MAKE_FLVR(SPTLRPC_POLICY_GSS,                   \
                   SPTLRPC_MECH_GSS_KRB5,                \

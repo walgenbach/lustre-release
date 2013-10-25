@@ -275,6 +275,12 @@ init_test_env() {
             GSS=true
             GSS_KRB5=true
             ;;
+        xgssnull|xsk*)
+            echo "Using $SEC ptlrpc security flavor"
+            which lgss_keyring > /dev/null 2>&1 || \
+                error_exit "built with gss disabled! SEC=$SEC"
+            GSS=true
+            ;;
     esac
 
     case "x$IDUP" in
@@ -692,7 +698,7 @@ init_gss() {
             module_loaded ptlrpc_gss ||
                 error_exit "init_gss : GSS=$GSS, but gss/krb5 is not supported!"
         fi
-        start_gss_daemons || error_exit "start gss daemon failed! rc=$?"
+        #start_gss_daemons || error_exit "start gss daemon failed! rc=$?"
 
         if [ -n "$LGSS_KEYRING_DEBUG" ]; then
             echo $LGSS_KEYRING_DEBUG > /proc/fs/lustre/sptlrpc/gss/lgss_keyring/debug_level

@@ -40,14 +40,30 @@ unset SEC
 #
 # global variables of this sanity
 #
+KRB5_CCACHE_DIR=/tmp
+KRB5_CRED=$KRB5_CCACHE_DIR/krb5cc_$RUNAS_ID
+KRB5_CRED_SAVE=$KRB5_CCACHE_DIR/krb5cc.sanity.save
 DBENCH_PID=0
 
 # set manually
 GSS=true
+GSS_KRB5=true
+
+prepare_krb5_creds() {
+    echo prepare krb5 cred
+    rm -f $KRB5_CRED_SAVE
+    echo RUNAS=$RUNAS
+    $RUNAS krb5_login.sh || exit 1
+    [ -f $KRB5_CRED ] || exit 2
+    echo CRED=$KRB5_CRED
+    cp $KRB5_CRED $KRB5_CRED_SAVE
+}
+
+prepare_krb5_creds
 
 # we want double mount
 MOUNT_2=${MOUNT_2:-"yes"}
-SEC=gssnull check_and_setup_lustre
+check_and_setup_lustre
 
 rm -rf $DIR/[df][0-9]*
 
@@ -105,13 +121,19 @@ stop_dbench()
     sync || true
 }
 
+restore_krb5_cred() {
+    cp $KRB5_CRED_SAVE $KRB5_CRED
+    chown $RUNAS_ID:$RUNAS_ID $KRB5_CRED
+    chmod 0600 $KRB5_CRED
+}
+
 check_multiple_gss_daemons() {
     local facet=$1
     local gssd=$2
     local gssd_name=`basename $gssd`
-return
+
     for ((i=0;i<10;i++)); do
-        do_facet $facet "$gssd -v -O null &"
+        do_facet $facet "$gssd -v &"
     done
 
     # wait daemons entering "stable" status
@@ -158,9 +180,9 @@ test_0() {
         check_multiple_gss_daemons $my_facet $LGSSD
     fi
 }
-#run_test 0 "start multiple gss daemons"
+run_test 0 "start multiple gss daemons"
 
-set_flavor_all gssnull
+set_flavor_all krb5p
 
 test_1() {
     local file=$DIR/$tfile
@@ -263,7 +285,7 @@ test_4() {
     wait $TOUCHPID && error "touch should fail"
 
     # restart lgssd
-    do_facet client "$LGSSD -O null -v"
+    do_facet client "$LGSSD -v"
     sleep 5
     check_gss_daemon_facet client lgssd
 
@@ -302,13 +324,13 @@ test_5() {
 
     # restart lsvcgssd, expect touch suceed
     echo "restart lsvcgssd and recovering"
-    start_gss_daemons $(comma_list $(mdts_nodes)) "$LSVCGSSD -O null -v"
+    start_gss_daemons $(comma_list $(mdts_nodes)) "$LSVCGSSD -v"
     sleep 5
     check_gss_daemon_nodes $(comma_list $(mdts_nodes)) lsvcgssd
     wait $TOUCHPID || error "touch fail"
     [ -f $file2 ] || error "$file2 not found"
 }
-#run_test 5 "lsvcgssd dead, operations lead to recovery"
+run_test 5 "lsvcgssd dead, operations lead to recovery"
 
 test_6() {
     local nfile=10
@@ -413,8 +435,8 @@ test_90() {
     fi
 
     restore_to_default_flavor
-    set_rule $FSNAME any any gssnull
-    wait_flavor all2all gssnull
+    set_rule $FSNAME any any krb5p
+    wait_flavor all2all krb5p
 
     start_dbench
 
@@ -444,7 +466,7 @@ test_99() {
     echo "original general rules: $nrule_old"
 
     for ((i = $nrule_old; i < $max; i++)); do
-        set_rule $FSNAME elan$i any gssnull || error "set rule $i"
+        set_rule $FSNAME elan$i any krb5n || error "set rule $i"
     done
     for ((i = $nrule_old; i < $max; i++)); do
         set_rule $FSNAME elan$i any || error "remove rule $i"
@@ -464,7 +486,7 @@ test_99() {
     echo "original target rules: $nrule_old"
 
     for ((i = $nrule_old; i < $max; i++)); do
-        set_rule $FSNAME-MDT0000 elan$i any gssnull || error "set rule $i"
+        set_rule $FSNAME-MDT0000 elan$i any krb5i || error "set rule $i"
     done
     for ((i = $nrule_old; i < $max; i++)); do
         set_rule $FSNAME-MDT0000 elan$i any || error "remove rule $i"
@@ -498,8 +520,20 @@ test_100() {
     #
     # all: null -> krb5n -> krb5a -> krb5i -> krb5p -> plain
     #
-    set_rule $FSNAME any any gssnull
-    wait_flavor all2all gssnull || error_dbench "1"
+    set_rule $FSNAME any any krb5n
+    wait_flavor all2all krb5n || error_dbench "1"
+    check_dbench
+
+    set_rule $FSNAME any any krb5a
+    wait_flavor all2all krb5a || error_dbench "2"
+    check_dbench
+
+    set_rule $FSNAME any any krb5i
+    wait_flavor all2all krb5i || error_dbench "3"
+    check_dbench
+
+    set_rule $FSNAME any any krb5p
+    wait_flavor all2all krb5p || error_dbench "4"
     check_dbench
 
     set_rule $FSNAME any any plain
@@ -507,40 +541,40 @@ test_100() {
     check_dbench
 
     #
-    # M - M: null
-    # C - M: null
-    # M - O: null
-    # C - O: null
+    # M - M: krb5a
+    # C - M: krb5i
+    # M - O: krb5p
+    # C - O: krb5n
     #
-    set_rule $FSNAME any mdt2mdt null
-    wait_flavor mdt2mdt null || error_dbench "6"
+    set_rule $FSNAME any mdt2mdt krb5a
+    wait_flavor mdt2mdt krb5a || error_dbench "6"
     check_dbench
 
-    set_rule $FSNAME any cli2mdt null
-    wait_flavor cli2mdt null || error_dbench "7"
+    set_rule $FSNAME any cli2mdt krb5i
+    wait_flavor cli2mdt krb5i || error_dbench "7"
     check_dbench
 
-    set_rule $FSNAME any mdt2ost null
-    wait_flavor mdt2ost null || error_dbench "8"
+    set_rule $FSNAME any mdt2ost krb5p
+    wait_flavor mdt2ost krb5p || error_dbench "8"
     check_dbench
 
-    set_rule $FSNAME any cli2ost null
-    wait_flavor cli2ost null || error_dbench "9"
+    set_rule $FSNAME any cli2ost krb5n
+    wait_flavor cli2ost krb5n || error_dbench "9"
     check_dbench
 
     #
-    # * - MDT0: null
-    # * - OST0: null
+    # * - MDT0: krb5p
+    # * - OST0: krb5i
     #
     # nothing should be changed because they are override by above dir rules
     #
-    set_rule $FSNAME-MDT0000 any any null
-    set_rule $FSNAME-OST0000 any any null
-    wait_flavor mdt2mdt null || error_dbench "10"
-    wait_flavor cli2mdt null || error_dbench "11"
+    set_rule $FSNAME-MDT0000 any any krb5p
+    set_rule $FSNAME-OST0000 any any krb5i
+    wait_flavor mdt2mdt krb5a || error_dbench "10"
+    wait_flavor cli2mdt krb5i || error_dbench "11"
     check_dbench
-    wait_flavor mdt2ost null || error_dbench "12"
-    wait_flavor cli2ost null || error_dbench "13"
+    wait_flavor mdt2ost krb5p || error_dbench "12"
+    wait_flavor cli2ost krb5n || error_dbench "13"
 
     #
     # delete all dir-specific rules
@@ -549,17 +583,17 @@ test_100() {
     set_rule $FSNAME any cli2mdt
     set_rule $FSNAME any mdt2ost
     set_rule $FSNAME any cli2ost
-    wait_flavor mdt2mdt null $((MDSCOUNT - 1)) || error_dbench "14"
-    wait_flavor cli2mdt null $(get_clients_mount_count) || error_dbench "15"
+    wait_flavor mdt2mdt krb5p $((MDSCOUNT - 1)) || error_dbench "14"
+    wait_flavor cli2mdt krb5p $(get_clients_mount_count) || error_dbench "15"
     check_dbench
-    wait_flavor mdt2ost null $MDSCOUNT || error_dbench "16"
-    wait_flavor cli2ost null $(get_clients_mount_count) || error_dbench "17"
+    wait_flavor mdt2ost krb5i $MDSCOUNT || error_dbench "16"
+    wait_flavor cli2ost krb5i $(get_clients_mount_count) || error_dbench "17"
     check_dbench
 
     #
     # remove:
-    #  * - MDT0: null
-    #  * - OST0: null
+    #  * - MDT0: krb5p
+    #  * - OST0: krb5i
     #
     set_rule $FSNAME-MDT0000 any any
     set_rule $FSNAME-OST0000 any any || error_dbench "18"
@@ -618,7 +652,15 @@ test_101()
     restore_to_default_flavor
 
     switch_sec_test null  plain
-    switch_sec_test plain null
+    switch_sec_test plain krb5n
+    switch_sec_test krb5n krb5a
+    switch_sec_test krb5a krb5i
+    switch_sec_test krb5i krb5p
+    switch_sec_test krb5p null
+    switch_sec_test null  krb5p
+    switch_sec_test krb5p krb5i
+    switch_sec_test krb5i plain
+    switch_sec_test plain krb5p
 }
 run_test 101 "switch ctx/sec for resending request"
 
