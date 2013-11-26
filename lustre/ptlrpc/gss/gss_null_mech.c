@@ -137,6 +137,15 @@ static struct gss_api_ops gss_null_ops = {
 	.gss_display                = gss_display_null,
 };
 
+static struct subflavor_desc gss_null_sfs[] = {
+	{
+		.sf_subflavor   = SPTLRPC_SUBFLVR_NULL,
+		.sf_qop         = 0,
+		.sf_service     = SPTLRPC_SVC_NULL,
+		.sf_name        = "gssnull"
+	},
+};
+
 /*
  * currently we leave module owner NULL
  */
@@ -148,8 +157,8 @@ static struct gss_api_mech gss_null_mech = {
 				"\053\006\001\004\001\311\146\215\126\001\000\000"
 			},
 	.gm_ops         = &gss_null_ops,
-	.gm_sf_num      = 0,
-	.gm_sfs         = NULL,
+	.gm_sf_num      = 1,
+	.gm_sfs         = gss_null_sfs,
 };
 
 int __init init_null_module(void)

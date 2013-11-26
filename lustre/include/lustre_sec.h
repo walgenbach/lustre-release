@@ -170,6 +170,8 @@ enum sptlrpc_bulk_service {
         ((__u32)(mech) |                                                \
          ((__u32)(svc) << (FLVR_SVC_OFFSET - FLVR_MECH_OFFSET)))
 
+#define SPTLRPC_SUBFLVR_NULL                                            \
+        MAKE_BASE_SUBFLVR(SPTLRPC_MECH_GSS_NULL, SPTLRPC_SVC_NULL)
 #define SPTLRPC_SUBFLVR_KRB5N                                           \
         MAKE_BASE_SUBFLVR(SPTLRPC_MECH_GSS_KRB5, SPTLRPC_SVC_NULL)
 #define SPTLRPC_SUBFLVR_KRB5A                                           \
