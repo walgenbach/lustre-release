@@ -152,7 +152,7 @@ static struct subflavor_desc gss_null_sfs[] = {
  */
 static struct gss_api_mech gss_null_mech = {
 	.gm_owner       = NULL, /*THIS_MODULE, */
-	.gm_name        = "null",
+	.gm_name        = "gssnull",
 	.gm_oid         = (rawobj_t) {
 		12,
 		"\053\006\001\004\001\311\146\215\126\001\000\000"
