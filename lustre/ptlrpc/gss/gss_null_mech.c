@@ -32,6 +32,7 @@ __u32 gss_import_sec_context_null(rawobj_t *inbuf, struct gss_ctx *gss_context)
 		return GSS_S_FAILURE;
 
 	gss_context->internal_ctx_id = null_context;
+	CDEBUG(D_SEC, "succesfully imported null context\n");
 
 	return GSS_S_COMPLETE;
 }
