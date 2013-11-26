@@ -113,9 +113,9 @@ __u32 gss_unwrap_bulk_null(struct gss_ctx *gss_context,
 static
 void gss_delete_sec_context_null(void *internal_context)
 {
-        struct null_ctx *null_context = internal_context;
+	struct null_ctx *null_context = internal_context;
 
-        OBD_FREE_PTR(null_context);
+	OBD_FREE_PTR(null_context);
 }
 
 int gss_display_null(struct gss_ctx *gss_context, char *buf, int bufsize)
@@ -154,9 +154,9 @@ static struct gss_api_mech gss_null_mech = {
 	.gm_owner       = NULL, /*THIS_MODULE, */
 	.gm_name        = "null",
 	.gm_oid         = (rawobj_t) {
-				12,
-				"\053\006\001\004\001\311\146\215\126\001\000\000"
-			},
+		12,
+		"\053\006\001\004\001\311\146\215\126\001\000\000"
+	},
 	.gm_ops         = &gss_null_ops,
 	.gm_sf_num      = 1,
 	.gm_sfs         = gss_null_sfs,
@@ -169,10 +169,11 @@ int __init init_null_module(void)
 	status = lgss_mech_register(&gss_null_mech);
 	if (status)
 		CERROR("Failed to register null gss mechanism!\n");
+
 	return status;
 }
 
 void __exit cleanup_null_module(void)
 {
-        lgss_mech_unregister(&gss_null_mech);
+	lgss_mech_unregister(&gss_null_mech);
 }
