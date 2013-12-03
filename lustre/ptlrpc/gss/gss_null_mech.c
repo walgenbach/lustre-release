@@ -140,7 +140,7 @@ static struct gss_api_ops gss_null_ops = {
 
 static struct subflavor_desc gss_null_sfs[] = {
 	{
-		.sf_subflavor   = SPTLRPC_SUBFLVR_NULL,
+		.sf_subflavor   = SPTLRPC_SUBFLVR_GSSNULL,
 		.sf_qop         = 0,
 		.sf_service     = SPTLRPC_SVC_NULL,
 		.sf_name        = "gssnull"
